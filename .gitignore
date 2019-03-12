@@ -115,3 +115,6 @@ ENV/
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# trigger request configuration file for build.py
+config.py

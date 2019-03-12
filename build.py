@@ -2,11 +2,12 @@
 import json
 import os
 import requests
+import config
 
 def send_trigger_request(email, TRAVIS_TAG, event_url, TRAVIS_SCRIPT, recipe, processor, feature):
-    USER = 'fossasia'
-    PROJECT = 'meilix'
-    BRANCH = 'master'
+    USER = config.USER
+    PROJECT = config.PROJECT
+    BRANCH = config.BRANCH
     softwares = json.dumps(recipe) # This solves `unbound variable`(ISSUE #405)
     feature = json.dumps(feature)
     travis_api_url = 'https://api.travis-ci.org/repo/{}%2F{}/requests'.format(USER, PROJECT)
