@@ -6,6 +6,7 @@ import build
 import json
 from flask import Flask, flash, render_template, request, redirect, url_for, send_from_directory
 from werkzeug import secure_filename
+import requests
 
 
 # These are the extension that we are accepting to be uploaded
@@ -70,8 +71,25 @@ def upload_logo(logo):
     if logo:
         if allowed_logos(logo.filename):
             filename = secure_filename(logo.filename)
-            logo.save(os.path.join(app.config['UPLOAD_FOLDER'] + app.config['LOGO_FOLDER'], filename))
-            os.rename(UPLOAD_FOLDER + LOGO_FOLDER + filename, UPLOAD_FOLDER + LOGO_FOLDER + 'logo')
+            url = "https://meilix-generator.herokuapp.com/uploads/logos/logos"
+            try:
+                # Uploading logo to transfer.sh
+                response = requests.post('https://transfer.sh', files= {'file': (filename, logo),})
+                url = response.text
+                print(url)
+            except:
+                try:
+                    print("upload failed(transfer.sh) \n retrying(0x0.st)")
+                    logo.seek(0)
+                    response = requests.post('https://0x0.st', files= {'file': (filename, logo),})
+                    url = response.text
+                    print(url)
+                except:
+                    # Saving logo to host
+                    logo.seek(0)
+                    logo.save(os.path.join(app.config['UPLOAD_FOLDER'] + app.config['LOGO_FOLDER'], filename))
+                    os.rename(UPLOAD_FOLDER + LOGO_FOLDER + filename, UPLOAD_FOLDER + LOGO_FOLDER + 'logo')
+            os.environ['logo_url'] = url
         else:
             flash('Logo not saved, extension not allowed')
             global flag
@@ -130,7 +148,7 @@ def index():
 def output():
     if flag:
         if os.environ['TRAVIS_TAG']:  # if TRAVIS_TAG have value it will proceed
-            trigger_code = build.send_trigger_request(os.environ['email'], os.environ['TRAVIS_TAG'], os.environ['event_url'],os.environ['TRAVIS_SCRIPT'], os.environ['recipe'], os.environ['processor'], os.environ['feature'])
+            trigger_code = build.send_trigger_request(os.environ['email'], os.environ['TRAVIS_TAG'], os.environ['event_url'],os.environ['TRAVIS_SCRIPT'], os.environ['recipe'], os.environ['processor'], os.environ['feature'], os.environ['logo_url'])
             if trigger_code != 202:
                 flash('Trigger failed, response code {}'.format(trigger_code)) #Display error if trigger fails
             return render_template('build.html')
